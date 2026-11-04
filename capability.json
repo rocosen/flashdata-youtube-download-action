@@ -15,5 +15,5 @@
     "source": "youtube_download"
   },
   "repository": "flashdata-youtube-download-action",
-  "action_name": "YouTube Cloud Delivery - FlashData"
+  "action_name": "YouTube Download to Cloud Storage"
 }

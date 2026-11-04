@@ -1,17 +1,15 @@
-# YouTube Cloud Delivery - FlashData
+# YouTube Download to Cloud Storage
 
-Submit an authorized media delivery to your own cloud storage, or recover its status and JSON delivery manifest using the saved job ID.
+Download YouTube video or audio to your cloud storage, then retrieve job status and the delivery manifest.
 
-This action calls the `youtube_download` FlashData API and writes files for subsequent GitHub Actions steps. It does not invoke a language model. Paid asynchronous job. Requires customer storage. Save the receipt; never submit again to poll. Result JSON expires after 24 hours; media retention depends on storage.
+Powered by the [FlashData YouTube Download to Cloud Storage API](https://flashdata.dev/docs/sources/youtube_download). Paid asynchronous job. Requires customer storage. Save the receipt; never submit again to poll. Result JSON expires after 24 hours; media retention depends on storage.
 
 ## Quick start
 
-1. [Create a FlashData account](https://flashdata.dev/signup), obtain an API Key, and fund the required Credits. [API setup and examples](https://flashdata.dev/docs/sources/youtube_download).
-2. Add FLASHDATA_API_KEY as a repository or environment Actions secret. Do not use a plaintext workflow input for the key.
-3. Add this manually triggered workflow and review its query before running it. Pin actions to a reviewed full commit SHA for production; the example uses a version tag for readability.
+Add a [FlashData API key](https://flashdata.dev/signup) as the repository secret `FLASHDATA_API_KEY`. API calls require FlashData Credits ([pricing](https://flashdata.dev/pricing)). Then add this workflow:
 
 ```yaml
-name: YouTube Cloud Delivery - FlashData
+name: YouTube Download to Cloud Storage
 on:
   workflow_dispatch:
     inputs:
@@ -25,15 +23,14 @@ jobs:
   collect:
     runs-on: ubuntu-latest
     steps:
-      - name: Submit an authorized media delivery to your own cloud storage, or recover
-          its status and JSON delivery manifest using the saved job ID.
+      - name: YouTube Download to Cloud Storage
         id: data
-        uses: rocosen/flashdata-youtube-download-action@v0.1.1
+        uses: rocosen/flashdata-youtube-download-action@v0.1.2
         with:
           api-key: ${{ secrets.FLASHDATA_API_KEY }}
           operation: result
           job-id: ${{ inputs.job_id }}
-      - name: Save data for the next pipeline stage
+      - name: Upload results
         uses: actions/upload-artifact@v4
         with:
           name: youtube-download
@@ -41,11 +38,11 @@ jobs:
           retention-days: 7
 ```
 
-The action is bundled for Node 24; no npm install or Python setup is required in your consuming workflow. Use an up-to-date GitHub runner. No schedule is enabled by this example.
+Run it from the **Actions** tab. Download the exported files from the run’s **Artifacts**, or use the output paths in later steps. Requires an up-to-date runner with Node 24 support; no dependency installation is needed. For production, pin actions to a reviewed commit SHA.
 
 ## Inputs
 
-| Input | Required | Meaning |
+| Input | Required | Description |
 | --- | --- | --- |
 | `api-key` | Yes | FlashData API Key. Pass secrets.FLASHDATA_API_KEY; requests use paid Credits. |
 | `video-id` | No | 11-character YouTube video ID. |
@@ -55,15 +52,25 @@ The action is bundled for Node 24; no npm install or Python setup is required in
 | `allow-submit` | No | Must be exactly true to submit a new paid storage write. Default: `false`. |
 | `storage-json` | No | For submit only: customer storage JSON from a GitHub Actions secret. |
 
-### Source options
+### Options
+
+Pass these fields in `options-json`:
 
 `download_type` (audio_video, video, audio), `video_quality` (best, worst, or <=/==/>= plus 144, 360, 480, 720, 1080, 1440, 2160, 4320), `fps` (>=/<=/== and 1–240), `audio_language` (default, original), `audio_quality` (best, 320, 256, 192, 128), `output_format` (video: mp4/webm/mkv; audio: m4a/mp3/opus), `yt_dlp_format`, `upload_metadata` (boolean), `start_at`/`end_at` (HH:MM:SS, end after start, at most 12 hours). Default audio_video/<=720/mp4; audio defaults to m4a/best. Advanced yt_dlp_format overrides video quality, fps and audio language selection. Read operations do not accept options-json.
 
-Unknown fields, incorrect types and invalid ranges fail before an API request. 
+Invalid options fail before an API request. Read operations require job-id; new submissions require allow-submit and storage-json.
 
 ## Outputs
 
-| Output | Meaning |
+- `response.json`: API response, including available result fields and usage; download lifecycle fields are sanitized.
+- `records.jsonl`: job receipt, status or completed delivery manifest.
+- `manifest.json`: source, operation, timestamps, record count and export warnings.
+
+Returned API fields: submit: id/status receipt; reads: job lifecycle; completed result: output JSON delivery manifest.
+
+Empty results produce an empty JSONL file and `result-count: 0`. Optional fields may be absent.
+
+| Step output | Description |
 | --- | --- |
 | `artifact-directory` | Absolute directory with response.json, records.jsonl and manifest.json. |
 | `results-file` | Absolute path to the original response JSON (sanitized lifecycle fields for download jobs). |
@@ -73,16 +80,12 @@ Unknown fields, incorrect types and invalid ranges fail before an API request.
 | `job-id` | Persist this receipt and reuse it for status/result. |
 | `job-status` | Current lifecycle status. A successful action does not mean the job has completed. |
 
-Raw API fields: submit: id/status receipt; reads: job lifecycle; completed result: output JSON delivery manifest. records.jsonl exports the sanitized job receipt/status or completed delivery manifest. manifest.json records the source, operation, timestamps, exported count and missing-collection warnings. For ordinary queries it also includes the query/options and API-reported usage.
+## Download a video or audio file
 
-Empty results produce an empty JSONL file and result-count 0. Missing fields stay missing; response.json preserves the original result envelope. The supplied upload-artifact step stores these files for 7 days. Only use queries and datasets appropriate for the repository’s artifact access level; private signed delivery links may be present in download manifests.
-
-## Submit once, then resume
-
-The default operation is `status`. The example above only reads an existing job. To create a new paid delivery, explicitly use:
+The quick-start example reads an existing job. To submit a new download to your storage:
 
 ```yaml
-- uses: rocosen/flashdata-youtube-download-action@v0.1.1
+- uses: rocosen/flashdata-youtube-download-action@v0.1.2
   id: submit
   with:
     api-key: ${{ secrets.FLASHDATA_API_KEY }}
@@ -93,18 +96,16 @@ The default operation is `status`. The example above only reads an existing job.
     storage-json: ${{ secrets.FLASHDATA_STORAGE_JSON }}
 ```
 
-Replace YOUR_VIDEO_ID with an 11-character video ID you may process. Save `steps.submit.outputs.job-id`; use it with `operation: status` or `result`, omitting video-id, options-json and storage-json. These read operations never create a new job and do not poll automatically. A pending/running result is not completed delivery. Result JSON is retained for 24 hours; media retention follows your storage policy.
+Replace `YOUR_VIDEO_ID` with an 11-character ID you may process. Set `FLASHDATA_STORAGE_JSON` to your storage configuration in Actions secrets. Supported providers: S3, S3-compatible, GCS, Azure, OSS, BOS, COS and TOS. [Storage setup and required fields](https://flashdata.dev/docs/sources/youtube_download).
 
-Store customer storage configuration in the secret FLASHDATA_STORAGE_JSON. Supported storage_type values are s3, s3_compatible, gcs, azure, oss, bos, cos and tos. All require storage_url (bucket/container); object_prefix is optional. S3-like providers require access_key/secret_key; regional providers require their documented region; s3_compatible requires an HTTPS endpoint_url. GCS uses a service_account object; Azure uses account_name and a writable container sas_token. [Provider-specific setup](https://flashdata.dev/docs/sources/youtube_download). Never paste real storage credentials into workflow source.
+Save `steps.submit.outputs.job-id`. Use it with `operation: status` or `result`, omitting submission inputs. Reads do not create a new download or poll automatically. A pending/running job is not a completed delivery. Result JSON expires after 24 hours; media retention follows your storage policy. Delivery manifests may contain private signed links.
 
-## Cost and failure handling
+## Pricing and errors
 
-The MIT action is free to install. FlashData API calls use paid Credits; GitHub runner/artifact, model (if you add one) and customer storage costs are separate. [Current pricing](https://flashdata.dev/pricing). Extended YouTube Search has a separate rate; media delivery is billed by delivered volume. Do not infer price from sample usage fields.
+The action is free to install. FlashData API calls use paid Credits; GitHub runner/artifact and cloud storage costs are separate. Media delivery is billed by delivered volume. [Current pricing](https://flashdata.dev/pricing).
 
-A timeout, HTTP error or response-processing failure may happen after a paid request was accepted. Check [FlashData](https://flashdata.dev) Jobs before rerunning; the action does not retry POST requests. HTTP 401 means check the Key; 402 means insufficient Credits; 429 means rate/quota limit. Keep any download job ID and resume with a read operation. Do not use workflow reruns as polling. Requests have a 65-second per-request timeout and a 16-MiB response limit.
+401: check the API key. 402: add Credits. 429: rate/quota limit. After a timeout, check [FlashData Jobs](https://flashdata.dev) before rerunning: a request may already have been accepted. Paid POST requests are not retried. Resume downloads using the saved job ID. Requests have a 65-second timeout and a 16-MiB response limit.
 
-## Development and validation
+## Development
 
-Run `npm ci`, `npm run check`, `npm test` and `npm run build`. Offline tests use labeled fixtures and make no production API calls. A local or CI test pass is not proof of a paid live run or Marketplace publication. Commit the bundled dist/index.cjs together with source changes.
-
-[Source-specific documentation](https://flashdata.dev/docs/sources/youtube_download) · [Pricing](https://flashdata.dev/pricing) · [Sign up](https://flashdata.dev/signup)
+`npm ci` → `npm run check` → `npm test` → `npm run build`. Tests use offline fixtures. Commit the bundle with runtime changes.

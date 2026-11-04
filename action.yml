@@ -1,6 +1,6 @@
-name: YouTube Cloud Delivery - FlashData
-description: Deliver authorized YouTube media to your cloud storage, or read job
-  status and manifests using a saved job ID.
+name: YouTube Download to Cloud Storage
+description: Download YouTube video or audio to your cloud storage, then
+  retrieve job status and the delivery manifest.
 author: FlashData
 branding:
   icon: download-cloud
