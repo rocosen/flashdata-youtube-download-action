@@ -2,11 +2,11 @@
 
 Download YouTube video or audio to your cloud storage, then retrieve job status and the delivery manifest.
 
-Powered by the [FlashData YouTube Download to Cloud Storage API](https://flashdata.dev/docs/sources/youtube_download). Paid asynchronous job. Requires customer storage. Save the receipt; never submit again to poll. Result JSON expires after 24 hours; media retention depends on storage.
+Powered by the [FlashData YouTube Download to Cloud Storage API](https://flashdata.dev/docs/sources/youtube_download?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task). Paid asynchronous job. Requires customer storage. Save the receipt; never submit again to poll. Result JSON expires after 24 hours; media retention depends on storage.
 
 ## Quick start
 
-Add a [FlashData API key](https://flashdata.dev/signup) as the repository secret `FLASHDATA_API_KEY`. API calls require FlashData Credits ([pricing](https://flashdata.dev/pricing)). Then add this workflow:
+Add a [FlashData API key](https://flashdata.dev/signup?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task) as the repository secret `FLASHDATA_API_KEY`. API calls require FlashData Credits ([pricing](https://flashdata.dev/pricing?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task)). Then add this workflow:
 
 ```yaml
 name: YouTube Download to Cloud Storage
@@ -96,15 +96,15 @@ The quick-start example reads an existing job. To submit a new download to your 
     storage-json: ${{ secrets.FLASHDATA_STORAGE_JSON }}
 ```
 
-Replace `YOUR_VIDEO_ID` with an 11-character ID you may process. Set `FLASHDATA_STORAGE_JSON` to your storage configuration in Actions secrets. Supported providers: S3, S3-compatible, GCS, Azure, OSS, BOS, COS and TOS. [Storage setup and required fields](https://flashdata.dev/docs/sources/youtube_download).
+Replace `YOUR_VIDEO_ID` with an 11-character ID you may process. Set `FLASHDATA_STORAGE_JSON` to your storage configuration in Actions secrets. Supported providers: S3, S3-compatible, GCS, Azure, OSS, BOS, COS and TOS. [Storage setup and required fields](https://flashdata.dev/docs/sources/youtube_download?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task).
 
 Save `steps.submit.outputs.job-id`. Use it with `operation: status` or `result`, omitting submission inputs. Reads do not create a new download or poll automatically. A pending/running job is not a completed delivery. Result JSON expires after 24 hours; media retention follows your storage policy. Delivery manifests may contain private signed links.
 
 ## Pricing and errors
 
-The action is free to install. FlashData API calls use paid Credits; GitHub runner/artifact and cloud storage costs are separate. Media delivery is billed by delivered volume. [Current pricing](https://flashdata.dev/pricing).
+The action is free to install. FlashData API calls use paid Credits; GitHub runner/artifact and cloud storage costs are separate. Media delivery is billed by delivered volume. [Current pricing](https://flashdata.dev/pricing?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task).
 
-401: check the API key. 402: add Credits. 429: rate/quota limit. After a timeout, check [FlashData Jobs](https://flashdata.dev) before rerunning: a request may already have been accepted. Paid POST requests are not retried. Resume downloads using the saved job ID. Requests have a 65-second timeout and a 16-MiB response limit.
+401: check the API key. 402: add Credits. 429: rate/quota limit. After a timeout, check [FlashData Jobs](https://flashdata.dev?utm_source=github-actions&utm_medium=integration&utm_campaign=intent_gtm_2026q4&utm_content=youtube_download-task) before rerunning: a request may already have been accepted. Paid POST requests are not retried. Resume downloads using the saved job ID. Requests have a 65-second timeout and a 16-MiB response limit.
 
 ## Development
 
